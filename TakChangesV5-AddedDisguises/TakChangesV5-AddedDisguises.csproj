@@ -92,12 +92,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="ForEvents\DisguiseModule\Commands\RemoteAdmin\Mask.cs" />
-    <Compile Include="ForEvents\DisguiseModule\Commands\RemoteAdmin\Masks.cs" />
-    <Compile Include="ForEvents\DisguiseModule\Commands\RemoteAdmin\Unmask.cs" />
-    <Compile Include="ForEvents\DisguiseModule\Extension\FakeRoleManager.cs" />
-    <Compile Include="ForEvents\DisguiseModule\UI\DisguisedUI.cs" />
-    <Compile Include="ForEvents\DisguiseModule\UI\Translations.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

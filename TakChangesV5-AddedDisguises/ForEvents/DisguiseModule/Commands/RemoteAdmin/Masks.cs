@@ -1,19 +1,17 @@
-﻿using CommandSystem;
-using LabApi.Features.Wrappers;
-using PlayerRoles;
-using RemoteAdmin;
-using System;
+﻿using System;
 using System.Text;
-using TakChangesV5.ForEvents.DisguiseModule.Extension;
+using CommandSystem;
+using LabApi.Features.Wrappers;
+using TakChangesV5.DisguiseModule.Extension;
 using UnityEngine;
 
-namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
+namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     public class MaskListCommand : ICommand
     {
         public string Command => "masks";
-        public string[] Aliases => new[] { "disguises" };
+        public string[] Aliases => ["disguises"];
         public string Description => "Shows all active disguises";
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
@@ -28,7 +26,7 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
 
             var disguises = FakeRoleManager.FakeRoles;
 
-            if (disguises == null || disguises.Count == 0)
+            if (disguises.Count == 0)
             {
                 response = "There are currently NO active disguises.";
                 return true;
@@ -39,17 +37,18 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
 
             foreach (var info in disguises)
             {
-                Player player = Player.Get(info.Key);
+                var player = Player.Get(info.Key);
                 var fakeRole = info.Value;
 
-                if (player == null)
+                if (player == null) {
                     continue;
+                }
 
-                float remainingTime = fakeRole.EndTime >= 31536000f
+                var remainingTime = fakeRole.EndTime >= 31536000f
                     ? -1
                     : fakeRole.EndTime - Time.time;
 
-                string timeText = remainingTime < 0
+                var timeText = remainingTime < 0
                     ? "Infinite"
                     : $"{remainingTime:F1}s";
 

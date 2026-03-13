@@ -1,28 +1,24 @@
-﻿using CommandSystem;
+﻿using System;
+using System.Collections.Generic;
+using CommandSystem;
 using LabApi.Features.Wrappers;
 using PlayerRoles;
 using RemoteAdmin;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using TakChangesV5.ForEvents.DisguiseModule.Extension;
-using static PlayerArms;
-using static TakChangesV5.ForEvents.DisguiseModule.Extension.FakeRoleManager;
+using static TakChangesV5.DisguiseModule.Extension.FakeRoleManager;
 
-namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
+namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     public class MaskCommand : ICommand, IUsageProvider
     {
         public string Command => "mask";
-        public string[] Aliases => new[] { "disguise" };
+        public string[] Aliases => ["disguise"];
         public string Description => "Disguises a player as another class";
 
-        public string[] Usage { get; } = { "player ID/* if all", "class ID", "optional: '0' or '1' (1 - teammates will see the real role)", "optional: disguise time in seconds" };
+        public string[] Usage { get; } = ["player ID/* if all", "class ID", "optional: '0' or '1' (1 - teammates will see the real role)", "optional: disguise time in seconds"];
 
         // Forbidden disguises List
-        private static readonly HashSet<RoleTypeId> UndisguisableRoles = new()
-        {
+        private static readonly HashSet<RoleTypeId> _undisguisableRoles = [
             RoleTypeId.None,
             RoleTypeId.Destroyed,
             RoleTypeId.Spectator,
@@ -30,7 +26,7 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
             RoleTypeId.CustomRole,
             RoleTypeId.Overwatch,
             RoleTypeId.Filmmaker
-        };
+        ];
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
@@ -49,7 +45,7 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
             }
 
             // Null Command Sender
-            Player senderPlayer = Player.Get(playerSender.ReferenceHub);
+            var senderPlayer = Player.Get(playerSender.ReferenceHub);
             if (senderPlayer == null)
             {
                 response = "Command sender not recognised (= null)!";
@@ -64,22 +60,22 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
             }
 
             // Class ID parse
-            if (!int.TryParse(arguments.At(1), out int classId))
+            if (!int.TryParse(arguments.At(1), out var classId))
             {
                 response = $"Incorrect class ID: ({arguments.At(1)})\n\n" + GetClassList();
                 return false;
             }
 
-            RoleTypeId classType = (RoleTypeId)classId;
+            var classType = (RoleTypeId)classId;
             // If this disguise cant be applied (spectator as disguise, overwatch as disguise etc)
-            if (!Enum.IsDefined(typeof(RoleTypeId), classType) || UndisguisableRoles.Contains(classType))
+            if (!Enum.IsDefined(typeof(RoleTypeId), classType) || _undisguisableRoles.Contains(classType))
             {
                 response = $"Class with ID: ({classId}) does not exist or cannot be set as a disguise!\n\n" + GetClassList();
                 return false;
             }
 
             // teamMode parse
-            int teamMode = 1;
+            var teamMode = 1;
             if (arguments.Count >= 3)
             {
                 if (!int.TryParse(arguments.At(2), out teamMode) || (teamMode != 0 && teamMode != 1))
@@ -90,7 +86,7 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
             }
 
             // Time parse
-            float duration = 31536000f; // 31536000f = inf (but if one round lasts for like 1 year we are fucked)
+            var duration = 31536000f; // 31536000f = inf (but if one round lasts for like 1 year we are fucked)
             if (arguments.Count >= 4)
             {
                 if (!float.TryParse(arguments.At(3), out duration) || duration <= 0 || duration >= 1000000)
@@ -100,45 +96,48 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
                 }
             }
 
-            string arg0 = arguments.At(0).ToLower();
+            var arg0 = arguments.At(0).ToLower();
             // If disguise everyone
             if (arg0 == "all" || arg0 == "*")
             {
                 // Get all players that can be disguised
-                List<Player> validPlayers = new List<Player>();
-                int maskedCount = 0;
-                int skippedCount = 0;
+                var validPlayers = new List<Player>();
+                var maskedCount = 0;
+                var skippedCount = 0;
 
                 foreach (var player in Player.List)
                 {
-                    if (!(player == null || UndisguisableRoles.Contains(player.Role))) validPlayers.Add(player);
-                    else skippedCount++;
+                    if (!(player == null || _undisguisableRoles.Contains(player.Role))) {
+                        validPlayers.Add(player);
+                    }
+                    else {
+                        skippedCount++;
+                    }
                 }
 
                 // Apply disguise to all valid players
                 foreach (var player in validPlayers)
                 {
-                    player.AddFakeRole(classType, DisguiseChangeReason.AddByRAConsole, duration, teamMode);
+                    player.AddFakeRole(classType, DisguiseChangeReason.ADD_BY_RA_CONSOLE, duration, teamMode);
                     maskedCount++;
                 }
 
-                string durationText = duration <= 1000002f ? $" for {duration} seconds" : "";
+                var durationText = duration <= 1000002f ? $" for {duration} seconds" : "";
 
-                if (skippedCount > 0) response = $"Done! {maskedCount} players masked as ({classId}) {classType}{durationText}. Skipped {skippedCount - 1} players with undisguisable roles.";
-                else response = $"Done! {maskedCount} players masked as ({classId}) {classType}{durationText}.";
+                response = skippedCount > 0 ? $"Done! {maskedCount} players masked as ({classId}) {classType}{durationText}. Skipped {skippedCount - 1} players with undisguisable roles." : $"Done! {maskedCount} players masked as ({classId}) {classType}{durationText}.";
 
                 return true;
             }
 
             // Player's ID parse
-            if (!int.TryParse(arg0, out int targetId))
+            if (!int.TryParse(arg0, out var targetId))
             {
                 response = $"Incorrect player ID: ({arg0})\n\n" + GetUsage();
                 return false;
             }
 
             // Null target player
-            Player targetPlayer = Player.Get(targetId);
+            var targetPlayer = Player.Get(targetId);
             if (targetPlayer == null)
             {
                 response = $"Player with ID: ({targetId}) not found!";
@@ -146,16 +145,16 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
             }
 
             // If this player can be disguised (not Spectator, Overwatch, SCP-079, CustomRole, Filmmaker, Destroyed)
-            if (!Enum.IsDefined(typeof(RoleTypeId), targetPlayer.Role) || UndisguisableRoles.Contains(targetPlayer.Role))
+            if (!Enum.IsDefined(typeof(RoleTypeId), targetPlayer.Role) || _undisguisableRoles.Contains(targetPlayer.Role))
             {
                 response = $"The player has an undisguisable class at the moment!";
                 return false;
             }
 
             // Applying disguise
-            targetPlayer.AddFakeRole(classType, DisguiseChangeReason.AddByRAConsole, duration, teamMode);
-            if (duration <= 1000002f) response = $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType} for {duration} seconds!";
-            else response = $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType}!";
+            targetPlayer.AddFakeRole(classType, DisguiseChangeReason.ADD_BY_RA_CONSOLE, duration, teamMode);
+            response = duration <= 1000002f ? $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType} for {duration} seconds!" : $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType}!";
+
             return true;
         }
 

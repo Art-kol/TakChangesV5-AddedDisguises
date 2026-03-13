@@ -1,14 +1,10 @@
-﻿using CommandSystem;
+﻿using System;
+using CommandSystem;
 using LabApi.Features.Wrappers;
 using RemoteAdmin;
-using System;
-using TakChangesV5.ForEvents.DisguiseModule.Extension;
-using UnityEngine.Rendering;
-using static Mono.Security.X509.X520;
-using static TakChangesV5.ForEvents.DisguiseModule.Extension.FakeRoleManager;
-using Logger = LabApi.Features.Console.Logger;
+using static TakChangesV5.DisguiseModule.Extension.FakeRoleManager;
 
-namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
+namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
 {
     [CommandHandler(typeof(RemoteAdminCommandHandler))]
     public class UnmaskCommand : ICommand, IUsageProvider
@@ -34,7 +30,7 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
             }
 
             // Null Command Sender
-            Player senderPlayer = Player.Get(playerSender.ReferenceHub);
+            var senderPlayer = Player.Get(playerSender?.ReferenceHub);
             if (senderPlayer == null)
             {
                 response = "Command sender not recognised (= null)!";
@@ -48,10 +44,10 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
                 return false;
             }
 
-            string arg = arguments.At(0).ToLower();
+            var arg = arguments.At(0).ToLower();
             
             // Unmask all
-            if (arg == "all" || arg == "*")
+            if (arg is "all" or "*")
             {
                 //Logger.Info($"Unmask signal for all detected!");
                 if (!sender.CheckPermission(PlayerPermissions.Noclip))
@@ -60,20 +56,20 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
                     return false;
                 }
 
-                RemoveFakeRolesForAll(DisguiseChangeReason.RemovedByRAConsole);
+                RemoveFakeRolesForAll(DisguiseChangeReason.REMOVED_BY_RA_CONSOLE);
                 response = $"Done! All players undisguised!";
                 return true;
             }
 
             // Player ID parse
-            if (!int.TryParse(arg, out int targetId))
+            if (!int.TryParse(arg, out var targetId))
             {
                 response = $"Incorrect player ID: {arg}\n\n";
                 return false;
             }
 
             // Null target player
-            Player targetPlayer = Player.Get(targetId);
+            var targetPlayer = Player.Get(targetId);
             if (targetPlayer == null)
             {
                 response = $"Player with ID: ({targetId}) not found!";
@@ -81,13 +77,13 @@ namespace TakChangesV5.ForEvents.DisguiseModule.RemoteAdmin
             }
 
             // Applying undisguise
-            targetPlayer.RemoveFakeRole(DisguiseChangeReason.RemovedByRAConsole);
+            targetPlayer.RemoveFakeRole(DisguiseChangeReason.REMOVED_BY_RA_CONSOLE);
             response = $"Done! ({targetId}) {targetPlayer.Nickname} is now undisguised!";
 
             return true;
         }
 
-        private string GetUsage()
+        private static string GetUsage()
         {
             return "How to use the command: unmask <player ID> \n" +
                    "Examples:\n" +
