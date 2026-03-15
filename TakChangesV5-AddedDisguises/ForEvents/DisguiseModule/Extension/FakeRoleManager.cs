@@ -41,18 +41,31 @@ namespace TakChangesV5.DisguiseModule.Extension {
 
         // Dict of all active disguises
         public static readonly Dictionary<ReferenceHub, FakeRole> FakeRoles = [];
-        public static void FakeRoleManagerChangingRole(PlayerChangingRoleEventArgs ev)
+        // #FOR TAKAIL:
+        // LEAVE THIS SHIT AS IT IS, UNLESS IT BREAKS UR PLUGINS!!!! >:(
+        static FakeRoleManager()
         {
-            if (ev.IsAllowed) {
-                RemoveFakeRole(ev.Player, DisguiseChangeReason.NONE);
-            }
+            PlayerEvents.ChangingRole += PlayerEvents_ChangingRole;
+            PlayerEvents.Left += PlayerEvents_OnPlayerLeft;
+            FpcServerPositionDistributor.RoleSyncEvent += FpcServerPositionDistributor_RoleSyncEvent;
         }
 
-        public static void FakeRoleManagerOnPlayerLeft(PlayerLeftEventArgs ev)
+        private static void PlayerEvents_ChangingRole(PlayerChangingRoleEventArgs ev)
         {
-            if (FakeRoles.ContainsKey(ev.Player.ReferenceHub)) {
+            if (ev.Player is null)
+                return;
+
+            if (ev.IsAllowed)
                 RemoveFakeRole(ev.Player, DisguiseChangeReason.NONE);
-            }
+        }
+
+        private static void PlayerEvents_OnPlayerLeft(PlayerLeftEventArgs ev)
+        {
+            if (FakeRoles.ContainsKey(ev.Player.ReferenceHub))
+                RemoveFakeRole(ev.Player, DisguiseChangeReason.NONE);
+
+            if (ev.Player is null)
+                return;
         }
 
         // Method for setting which observers will be fooled by the disguise
