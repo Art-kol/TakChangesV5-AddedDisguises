@@ -23,7 +23,15 @@ namespace TakChangesV5.DisguiseModule.UI {
 
 
             if (FakeRoles.TryGetValue(player.ReferenceHub, out var fakeRole) && (fakeRole.EndTime - Time.time > 0)) {
-                ShowDisguise(player, fakeRole, reason);
+                ShowDisguiseTimer(player, fakeRole, reason);
+                if (reason == DisguiseChangeReason.ADD_BY_RA_CONSOLE)
+                {
+                    ShowDisguiseRole(player, fakeRole, reason);
+                }
+                else
+                {
+                    RueDisplay.Get(player).Remove(_fakeRoleNameTag);
+                }
             }
             else {
                 if (reason != DisguiseChangeReason.NONE) {
@@ -35,7 +43,7 @@ namespace TakChangesV5.DisguiseModule.UI {
             }
         }
 
-        private static void ShowDisguise(Player player, FakeRole fakeRole, DisguiseChangeReason reason) {
+        private static void ShowDisguiseRole(Player player, FakeRole fakeRole, DisguiseChangeReason reason) {
             var text = BuildFakeRoleInfo(player, fakeRole);
 
             var infoElement = new BasicElement(50 /*YCoord*/, text) {
@@ -43,6 +51,11 @@ namespace TakChangesV5.DisguiseModule.UI {
                 VerticalAlign = VerticalAlign.Down
             };
 
+            RueDisplay.Get(player).Show(_fakeRoleNameTag, infoElement);
+        }
+
+        private static void ShowDisguiseTimer(Player player, FakeRole fakeRole, DisguiseChangeReason reason)
+        {
             var timerElement = new DynamicElement(
                 position: 50 /*YCoord*/,
                 contentGetter: rh => {
@@ -78,7 +91,6 @@ namespace TakChangesV5.DisguiseModule.UI {
                 UpdateInterval = TimeSpan.FromSeconds(1)
             };
 
-            RueDisplay.Get(player).Show(_fakeRoleNameTag, infoElement);
             RueDisplay.Get(player).Show(_fakeRoleDurationTag, timerElement);
             if (reason != DisguiseChangeReason.NONE) {
                 AnnounceHintOrBroadcast(player, fakeRole, reason);
@@ -87,18 +99,6 @@ namespace TakChangesV5.DisguiseModule.UI {
 
 
         private static void AnnounceHintOrBroadcast(Player player, FakeRole fakeRole, DisguiseChangeReason reason) {
-            /* switch (reason) {
-                case DisguiseChangeReason.NONE:
-                    return;
-                case DisguiseChangeReason.REMOVED_BY_RA_CONSOLE:
-                    player.SendBroadcast(BuildAnnounceBroadcast(reason), 5, Broadcast.BroadcastFlags.Normal, true);
-                    return;
-                case DisguiseChangeReason.ADD_BY_RA_CONSOLE:
-                case DisguiseChangeReason.REMOVED_BY_TIMER:
-                default:
-                    break;
-            } */
-
             var announceText = BuildAnnounceHint(fakeRole, reason);
             var announceElement = new BasicElement(350, announceText) { ZIndex = 7 };
 
