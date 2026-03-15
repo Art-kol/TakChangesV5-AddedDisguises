@@ -5,6 +5,7 @@ using LabApi.Features.Wrappers;
 using PlayerRoles;
 using RemoteAdmin;
 using static TakChangesV5.DisguiseModule.Extension.FakeRoleManager;
+using static TakChangesV5.ForEvents.DisguiseModule.UI.UIHelpingStaticData;
 
 namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
 {
@@ -86,7 +87,7 @@ namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
             }
 
             // Time parse
-            var duration = 31536000f; // 31536000f = inf (but if one round lasts for like 1 year we are fucked)
+            var duration = -100f;
             if (arguments.Count >= 4)
             {
                 if (!float.TryParse(arguments.At(3), out duration) || duration <= 0 || duration >= 1000000)
@@ -122,7 +123,7 @@ namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
                     maskedCount++;
                 }
 
-                var durationText = duration <= 1000002f ? $" for {duration} seconds" : "";
+                var durationText = duration > 0 ? $" for {duration} seconds" : "";
 
                 response = skippedCount > 0 ? $"Done! {maskedCount} players masked as ({classId}) {classType}{durationText}. Skipped {skippedCount - 1} players with undisguisable roles." : $"Done! {maskedCount} players masked as ({classId}) {classType}{durationText}.";
 
@@ -153,7 +154,7 @@ namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
 
             // Applying disguise
             targetPlayer.AddFakeRole(classType, DisguiseChangeReason.ADD_BY_RA_CONSOLE, duration, teamMode);
-            response = duration <= 1000002f ? $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType} for {duration} seconds!" : $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType}!";
+            response = duration > 0 ? $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType} for {duration} seconds!" : $"Done! ({targetId}) {targetPlayer.Nickname} is now disguised as ({classId}) {classType}!";
 
             return true;
         }

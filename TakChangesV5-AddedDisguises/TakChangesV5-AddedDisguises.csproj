@@ -92,22 +92,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="ForEvents\DisguiseModule\Commands\RemoteAdmin\Mask.cs" />
+    <Compile Include="ForEvents\DisguiseModule\Commands\RemoteAdmin\Masks.cs" />
+    <Compile Include="ForEvents\DisguiseModule\Commands\RemoteAdmin\Unmask.cs" />
+    <Compile Include="ForEvents\DisguiseModule\Extension\FakeRoleManager.cs" />
+    <Compile Include="ForEvents\DisguiseModule\UI\DisguisedUI.cs" />
+    <Compile Include="ForEvents\DisguiseModule\UI\UIHelpingStaticData.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="ForEvents\LIBDependencies\Assembly-CSharp-firstpass.dll" />
-    <Content Include="ForEvents\LIBDependencies\Assembly-CSharp.dll" />
-    <Content Include="ForEvents\LIBDependencies\CommandSystem.Core.dll" />
-    <Content Include="ForEvents\LIBDependencies\LabApi.dll" />
-    <Content Include="ForEvents\LIBDependencies\Mirror.dll" />
-    <Content Include="ForEvents\LIBDependencies\Mono.Security.dll" />
-    <Content Include="ForEvents\LIBDependencies\mscorlib.dll" />
-    <Content Include="ForEvents\LIBDependencies\NorthwoodLib.dll" />
-    <Content Include="ForEvents\LIBDependencies\Pooling.dll" />
-    <Content Include="ForEvents\LIBDependencies\UnityEngine.CoreModule.dll" />
-    <Content Include="ForEvents\LIBDependencies\UnityEngine.dll" />
-    <Content Include="ForEvents\LIBDependencies\YamlDotNet.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

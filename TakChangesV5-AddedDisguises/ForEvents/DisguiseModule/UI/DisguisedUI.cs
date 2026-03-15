@@ -6,6 +6,7 @@ using RueI.API.Elements;
 using RueI.API.Elements.Enums;
 using UnityEngine;
 using static TakChangesV5.DisguiseModule.Extension.FakeRoleManager;
+using static TakChangesV5.ForEvents.DisguiseModule.UI.UIHelpingStaticData;
 
 // This file manages the players' UIs when disguised
 // It uses RueI dependency which is a plugin that shows multiple UI elements
@@ -17,13 +18,15 @@ namespace TakChangesV5.DisguiseModule.UI {
         private static readonly Tag _announceHintShowDisguiseTag = new("hud_announcehintshowdisguise");
 
         public static void RefreshDisguiseUI(Player player, DisguiseChangeReason reason) {
-            if (player == null) {
-                return;
-            }
-
-
-            if (FakeRoles.TryGetValue(player.ReferenceHub, out var fakeRole) && (fakeRole.EndTime - Time.time > 0)) {
+            
+            if (FakeRoles.TryGetValue(player.ReferenceHub, out var fakeRole)) {
                 ShowDisguise(player, fakeRole, reason);
+
+                if (fakeRole.DisguiseDuration > 0)
+                {
+                    ShowDisguiseTimer(player, fakeRole, reason);
+                }
+
             }
             else {
                 if (reason != DisguiseChangeReason.NONE) {
@@ -43,51 +46,49 @@ namespace TakChangesV5.DisguiseModule.UI {
                 VerticalAlign = VerticalAlign.Down
             };
 
-            var timerElement = new DynamicElement(
-                position: 50 /*YCoord*/,
-                contentGetter: rh => {
-                    var ply = Player.Get(rh);
-
-                    if (ply == null) {
-                        return string.Empty;
-                    }
-
-                    if (!FakeRoles.TryGetValue(ply.ReferenceHub, out var currentFakeRole)) {
-                        RueDisplay.Get(ply).Remove(_fakeRoleDurationTag);
-                        return string.Empty;
-                    }
-
-                    var currentTimeLeft = currentFakeRole.EndTime - Time.time;
-
-                    if (currentTimeLeft <= 0) {
-                        RefreshDisguiseUI(ply, DisguiseChangeReason.REMOVED_BY_TIMER);
-                        return string.Empty;
-                    }
-
-                    if (currentFakeRole.EndTime >= 31536000f) {
-                        return string.Empty;
-                    }
-
-                    var formattedTime = FormatTime(currentTimeLeft);
-                    var timerColor = GetTimerColor(currentTimeLeft);
-
-                    return BuildFakeRoleDuration(timerColor, formattedTime);
-                }) {
-                ZIndex = 7,
-                VerticalAlign = VerticalAlign.Down,
-                UpdateInterval = TimeSpan.FromSeconds(1)
-            };
-
             RueDisplay.Get(player).Show(_fakeRoleNameTag, infoElement);
-            RueDisplay.Get(player).Show(_fakeRoleDurationTag, timerElement);
             if (reason != DisguiseChangeReason.NONE) {
                 AnnounceHintOrBroadcast(player, fakeRole, reason);
             }
         }
 
+        private static void ShowDisguiseTimer(Player player, FakeRole fakeRole, DisguiseChangeReason reason)
+        {
+            var formattedTime = FormatTime(fakeRole.DisguiseDuration);
+            var timerColor = GetTimerColor(fakeRole.DisguiseDuration);
+            var text = BuildFakeRoleDuration(timerColor, formattedTime);
 
-        private static void AnnounceHintOrBroadcast(Player player, FakeRole fakeRole, DisguiseChangeReason reason) {
-            switch (reason) {
+            var timerElement = new BasicElement(50, text) {
+                ZIndex = 7,
+                VerticalAlign = VerticalAlign.Down
+            };
+
+            RueDisplay.Get(player).Remove(_fakeRoleDurationTag);
+            RueDisplay.Get(player).Show(_fakeRoleDurationTag, timerElement);
+        }
+
+
+        // =============== BUILDERS ===============
+        private static string BuildFakeRoleInfo(Player player, FakeRole fakeRole) {
+            if (!fakeRole.Role.TryGetRoleTemplate(out PlayerRoleBase fakeRoleBase)) {
+                return string.Empty;
+            }
+
+            var fakeRoleColor = "#" + ColorUtility.ToHtmlStringRGB(fakeRoleBase.RoleColor);
+            var fakeRoleName = GameRoles[fakeRole.Role];
+
+
+            return $"<size=25><space=-900><color=white><b>🎭 Disguise</b></color> \n <space=-900><color={fakeRoleColor}>{fakeRoleName}</color></size>";
+        }
+
+        private static string BuildFakeRoleDuration(string timerColor, string formattedTime) => $"<size=25><color=white><b>⏰ Duration</b></color> \n <color={timerColor}>{formattedTime}</color></size>";
+
+
+        // BUILDERS for announcing:
+        private static void AnnounceHintOrBroadcast(Player player, FakeRole fakeRole, DisguiseChangeReason reason)
+        {
+            switch (reason)
+            {
                 case DisguiseChangeReason.NONE:
                     return;
                 case DisguiseChangeReason.REMOVED_BY_RA_CONSOLE:
@@ -102,31 +103,16 @@ namespace TakChangesV5.DisguiseModule.UI {
             var announceText = BuildAnnounceHint(fakeRole, reason);
             var announceElement = new BasicElement(350, announceText) { ZIndex = 7 };
 
-            switch (reason) {
+            switch (reason)
+            {
                 case DisguiseChangeReason.ADD_BY_RA_CONSOLE:
-                    RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, Math.Min(10f, fakeRole.EndTime - Time.time));
+                    RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, Math.Min(10f, Math.Abs(fakeRole.DisguiseDuration)));
                     break;
                 case DisguiseChangeReason.REMOVED_BY_TIMER:
                     RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, 5f);
                     break;
             }
         }
-
-
-        // =============== BUILDERS ===============
-        private static string BuildFakeRoleInfo(Player player, FakeRole fakeRole) {
-            if (!fakeRole.Role.TryGetRoleTemplate(out PlayerRoleBase fakeRoleBase)) {
-                return string.Empty;
-            }
-
-            var fakeRoleColor = "#" + ColorUtility.ToHtmlStringRGB(fakeRoleBase.RoleColor);
-            var fakeRoleName = ForEvents.DisguiseModule.UI.Translations.GameRoles[fakeRole.Role];
-
-
-            return $"<size=25><space=-900><color=white><b>🎭 Disguise</b></color> \n <space=-900><color={fakeRoleColor}>{fakeRoleName}</color></size>";
-        }
-
-        private static string BuildFakeRoleDuration(string timerColor, string formattedTime) => $"<size=25><color=white><b>⏰ Duration</b></color> \n <color={timerColor}>{formattedTime}</color></size>";
 
         private static string BuildAnnounceHint(FakeRole fakeRole, DisguiseChangeReason reason) {
             var result = string.Empty;
@@ -137,11 +123,11 @@ namespace TakChangesV5.DisguiseModule.UI {
                     }
 
                     var fakeRoleColor = "#" + ColorUtility.ToHtmlStringRGB(fakeRoleBase.RoleColor);
-                    var fakeRoleName = ForEvents.DisguiseModule.UI.Translations.GameRoles[fakeRole.Role];
+                    var fakeRoleName = GameRoles[fakeRole.Role];
 
                     result = $"<size=30><color=white>You have been disguised as <color={fakeRoleColor}>{fakeRoleName}</color></color>";
-                    if (fakeRole.EndTime <= 1000002f) {
-                        result += $" <color=white>for <color={GetTimerColor(fakeRole.EndTime - Time.time)}>{FormatTime(fakeRole.EndTime - Time.time)}</color></color>!";
+                    if (fakeRole.DisguiseDuration > 0) {
+                        result += $" <color=white>for <color={GetTimerColor(fakeRole.DisguiseDuration)}>{FormatTime(fakeRole.DisguiseDuration)}</color></color>!";
                     }
                     else {
                         result += $"!";

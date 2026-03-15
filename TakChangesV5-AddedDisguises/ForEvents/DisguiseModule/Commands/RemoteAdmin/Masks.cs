@@ -44,9 +44,9 @@ namespace TakChangesV5.DisguiseModule.Commands.RemoteAdmin
                     continue;
                 }
 
-                var remainingTime = fakeRole.EndTime >= 31536000f
+                var remainingTime = fakeRole.DisguiseDuration > 0
                     ? -1
-                    : fakeRole.EndTime - Time.time;
+                    : fakeRole.DisguiseDuration;
 
                 var timeText = remainingTime < 0
                     ? "Infinite"

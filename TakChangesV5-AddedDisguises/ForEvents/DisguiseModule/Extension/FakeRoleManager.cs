@@ -6,6 +6,7 @@ using LabApi.Features.Extensions;
 using LabApi.Features.Wrappers;
 using Mirror;
 using PlayerRoles;
+using PlayerRoles.Filmmaker;
 using PlayerRoles.FirstPersonControl;
 using PlayerRoles.FirstPersonControl.NetworkMessages;
 using PlayerRoles.PlayableScps.Scp049.Zombies;
@@ -16,26 +17,21 @@ using Respawning.NamingRules;
 using TakChangesV5.DisguiseModule.UI;
 using TakChangesV5.ForEvents.DisguiseModule.UI;
 using UnityEngine;
+using static TakChangesV5.ForEvents.DisguiseModule.UI.UIHelpingStaticData;
 
 // File for the whole logic of disguising
 
 namespace TakChangesV5.DisguiseModule.Extension {
     public static class FakeRoleManager
     {
-        // The reason of disguise changes (for Announce Hints)
-        public enum DisguiseChangeReason : sbyte
-        {
-            NONE = 0, // If we dont want to show it in AnnounceHints
-            ADD_BY_RA_CONSOLE = 1,
-            REMOVED_BY_RA_CONSOLE = 2,
-            REMOVED_BY_TIMER = 3
-        }
+        private static float _nextTimerUpdate;
 
         public struct FakeRole
         {
             public RoleTypeId Role;
             // public Dictionary<ReferenceHub, RoleTypeId> RoleToViewer;
-            public float EndTime;
+            // public float EndTime;
+            public float DisguiseDuration;
             public int TeamMode;
         }
 
@@ -82,8 +78,11 @@ namespace TakChangesV5.DisguiseModule.Extension {
         }
 
         // Adding FakeRole to player
-        public static void AddFakeRole(this Player player, RoleTypeId roleType, DisguiseChangeReason reason, float duration = 31536000f, int teamMode = 1) {
-            FakeRoles.Remove(player.ReferenceHub);
+        public static void AddFakeRole(this Player player, RoleTypeId roleType, DisguiseChangeReason reason, float duration = -100f, int teamMode = 1) {
+            if (FakeRoles.ContainsKey(player.ReferenceHub))
+            {
+                RemoveFakeRole(player, DisguiseChangeReason.NONE);
+            }
 
             if (player.Connection == null && player.IsReady) {
                 return;
@@ -94,7 +93,8 @@ namespace TakChangesV5.DisguiseModule.Extension {
             {
                 Role = roleType,
                 // RoleToViewer = [],
-                EndTime = Time.time + duration,
+                // EndTime = Time.time + duration,
+                DisguiseDuration = duration,
                 TeamMode = teamMode
             };
 
@@ -126,11 +126,28 @@ namespace TakChangesV5.DisguiseModule.Extension {
         }
 
         private static void UpdateTimers() {
+            if (Time.time < _nextTimerUpdate)
+                return;
+
+            _nextTimerUpdate = Time.time + 0.5f;
             // Updating timers for temporary disguises
             // #WARNING technically works seperately from UI, so yeah...
-            foreach (var fakeRole in FakeRoles.Where(kvp => kvp.Value.EndTime > 0 && Time.time >= kvp.Value.EndTime)) {
-                FakeRoles.Remove(fakeRole.Key);
-                DisguisedUI.RefreshDisguiseUI(Player.Get(fakeRole.Key), DisguiseChangeReason.REMOVED_BY_TIMER);
+            foreach (var kvp in FakeRoles.ToList())
+            {
+                var fakeRole = kvp.Value;
+
+                if (fakeRole.DisguiseDuration <= 0 &&
+                    fakeRole.DisguiseDuration > -100) {
+                    Player p = Player.Get(kvp.Key);
+                    p.RemoveFakeRole(DisguiseChangeReason.REMOVED_BY_TIMER);
+
+                    continue;
+                }
+
+                fakeRole.DisguiseDuration -= 0.5f;
+
+                FakeRoles[kvp.Key] = fakeRole;
+                DisguisedUI.RefreshDisguiseUI(Player.Get(kvp.Key), DisguiseChangeReason.NONE);
             }
         }
 

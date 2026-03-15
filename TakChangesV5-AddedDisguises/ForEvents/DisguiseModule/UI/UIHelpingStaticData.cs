@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 // File for UI that shows more readable data
 namespace TakChangesV5.ForEvents.DisguiseModule.UI
 {
-    public class Translations
+    public class UIHelpingStaticData
     {
         public static Dictionary<RoleTypeId, string> GameRoles = new Dictionary<RoleTypeId, string>
         {
@@ -44,5 +44,15 @@ namespace TakChangesV5.ForEvents.DisguiseModule.UI
             { RoleTypeId.NtfFlamingo, "MTF Flamingo" },
             { RoleTypeId.ChaosFlamingo, "Chaos Flamingo" }
         };
+
+        // The reason of disguise changes (for Announce Hints)
+        public enum DisguiseChangeReason : sbyte
+        {
+            NONE = 0, // If we dont want to show it in AnnounceHints
+            ADD_BY_RA_CONSOLE = 1,
+            REMOVED_BY_RA_CONSOLE = 2,
+            REMOVED_BY_TIMER = 3
+        }
+
     }
 }
