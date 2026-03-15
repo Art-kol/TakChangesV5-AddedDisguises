@@ -22,16 +22,33 @@ namespace TakChangesV5.DisguiseModule.UI {
             }
 
 
-            if (FakeRoles.TryGetValue(player.ReferenceHub, out var fakeRole) && (fakeRole.EndTime - Time.time > 0)) {
-                ShowDisguise(player, fakeRole, reason);
-            }
-            else {
-                if (reason != DisguiseChangeReason.NONE) {
-                    AnnounceHintOrBroadcast(player, fakeRole, reason);
+            if (FakeRoles.TryGetValue(player.ReferenceHub, out var fakeRole))
+            {
+                // fakeRole.EndTime - Time.time > 0 && 
+                if (reason == DisguiseChangeReason.ADD_BY_RA_CONSOLE)
+                {
+                    ShowDisguise(player, fakeRole, reason);
                 }
+                else
+                {
+                    if (reason != DisguiseChangeReason.NONE)
+                    {
+                        AnnounceHint(player, fakeRole, reason);
+                    }
 
+                    RueDisplay.Get(player).Remove(_fakeRoleDurationTag);
+                    RueDisplay.Get(player).Remove(_fakeRoleNameTag);
+                }
+            }
+            else
+            {
+                // #NOTE: OUR PROGRAMM MUST NEVER GET HERE!
+                // BUT IN CASE IT DOES, REMOVE EVERYTHING
                 RueDisplay.Get(player).Remove(_fakeRoleDurationTag);
                 RueDisplay.Get(player).Remove(_fakeRoleNameTag);
+                RueDisplay.Get(player).Remove(_announceHintShowDisguiseTag);
+
+                return;
             }
         }
 
@@ -51,6 +68,10 @@ namespace TakChangesV5.DisguiseModule.UI {
                     if (ply == null) {
                         return string.Empty;
                     }
+
+#if DEBUG
+                    LabApi.Features.Console.Logger.Info($"## Dynamic running");
+#endif
 
                     if (!FakeRoles.TryGetValue(ply.ReferenceHub, out var currentFakeRole)) {
                         RueDisplay.Get(ply).Remove(_fakeRoleDurationTag);
@@ -81,13 +102,13 @@ namespace TakChangesV5.DisguiseModule.UI {
             RueDisplay.Get(player).Show(_fakeRoleNameTag, infoElement);
             RueDisplay.Get(player).Show(_fakeRoleDurationTag, timerElement);
             if (reason != DisguiseChangeReason.NONE) {
-                AnnounceHintOrBroadcast(player, fakeRole, reason);
+                AnnounceHint(player, fakeRole, reason);
             }
         }
 
 
-        private static void AnnounceHintOrBroadcast(Player player, FakeRole fakeRole, DisguiseChangeReason reason) {
-            switch (reason) {
+        private static void AnnounceHint(Player player, FakeRole fakeRole, DisguiseChangeReason reason) {
+            /*switch (reason) {
                 case DisguiseChangeReason.NONE:
                     return;
                 case DisguiseChangeReason.REMOVED_BY_RA_CONSOLE:
@@ -97,7 +118,7 @@ namespace TakChangesV5.DisguiseModule.UI {
                 case DisguiseChangeReason.REMOVED_BY_TIMER:
                 default:
                     break;
-            }
+            }*/
 
             var announceText = BuildAnnounceHint(fakeRole, reason);
             var announceElement = new BasicElement(350, announceText) { ZIndex = 7 };
@@ -105,6 +126,9 @@ namespace TakChangesV5.DisguiseModule.UI {
             switch (reason) {
                 case DisguiseChangeReason.ADD_BY_RA_CONSOLE:
                     RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, Math.Min(10f, fakeRole.EndTime - Time.time));
+                    break;
+                case DisguiseChangeReason.REMOVED_BY_RA_CONSOLE:
+                    RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, 5f);
                     break;
                 case DisguiseChangeReason.REMOVED_BY_TIMER:
                     RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, 5f);
@@ -170,15 +194,6 @@ namespace TakChangesV5.DisguiseModule.UI {
             return result;
         }
 
-        private static string BuildAnnounceBroadcast(DisguiseChangeReason reason) {
-            var result = string.Empty;
-            // !!!!!!! NEEDS TO BE FIXED LATER. I CANT FIGURE OUT HOW TO DESTROY DYNAMIC ELEMENT AFTER RUNNING
-            if (reason == DisguiseChangeReason.REMOVED_BY_RA_CONSOLE) {
-                result = $"<size=40><color=white>Your disguise has been spontaneously worn off. \n Now <color=yellow>everyone sees your true role!</color></color></size>";
-            }
-
-            return result;
-        }
 
 
         // ============= HELPERS ===============
