@@ -119,11 +119,11 @@ namespace TakChangesV5.DisguiseModule.Extension {
 
         public static void RemoveFakeRole(this Player player, DisguiseChangeReason reason)
         {
-            // Remove the player's disguise if it exists in dictionary
-            FakeRoles.Remove(player.ReferenceHub);
-
             // Update UI according to the removal of fake role for the player
             DisguisedUI.RefreshDisguiseUI(player, reason);
+
+            // Remove the player's disguise if it exists in dictionary
+            FakeRoles.Remove(player.ReferenceHub);
         }
 
         public static void RemoveFakeRolesForAll(DisguiseChangeReason reason)

@@ -87,7 +87,7 @@ namespace TakChangesV5.DisguiseModule.UI {
 
 
         private static void AnnounceHintOrBroadcast(Player player, FakeRole fakeRole, DisguiseChangeReason reason) {
-            switch (reason) {
+            /* switch (reason) {
                 case DisguiseChangeReason.NONE:
                     return;
                 case DisguiseChangeReason.REMOVED_BY_RA_CONSOLE:
@@ -97,7 +97,7 @@ namespace TakChangesV5.DisguiseModule.UI {
                 case DisguiseChangeReason.REMOVED_BY_TIMER:
                 default:
                     break;
-            }
+            } */
 
             var announceText = BuildAnnounceHint(fakeRole, reason);
             var announceElement = new BasicElement(350, announceText) { ZIndex = 7 };
@@ -105,6 +105,9 @@ namespace TakChangesV5.DisguiseModule.UI {
             switch (reason) {
                 case DisguiseChangeReason.ADD_BY_RA_CONSOLE:
                     RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, Math.Min(10f, fakeRole.EndTime - Time.time));
+                    break;
+                case DisguiseChangeReason.REMOVED_BY_RA_CONSOLE:
+                    RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, 5f);
                     break;
                 case DisguiseChangeReason.REMOVED_BY_TIMER:
                     RueDisplay.Get(player).Show(_announceHintShowDisguiseTag, announceElement, 5f);
@@ -170,7 +173,7 @@ namespace TakChangesV5.DisguiseModule.UI {
             return result;
         }
 
-        private static string BuildAnnounceBroadcast(DisguiseChangeReason reason) {
+        /*private static string BuildAnnounceBroadcast(DisguiseChangeReason reason) {
             var result = string.Empty;
             // !!!!!!! NEEDS TO BE FIXED LATER. I CANT FIGURE OUT HOW TO DESTROY DYNAMIC ELEMENT AFTER RUNNING
             if (reason == DisguiseChangeReason.REMOVED_BY_RA_CONSOLE) {
@@ -178,7 +181,7 @@ namespace TakChangesV5.DisguiseModule.UI {
             }
 
             return result;
-        }
+        }*/
 
 
         // ============= HELPERS ===============
