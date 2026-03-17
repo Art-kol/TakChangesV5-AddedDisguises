@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using LabApi.Events.Arguments.PlayerEvents;
+﻿using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Events.Handlers;
 using LabApi.Features.Extensions;
 using LabApi.Features.Wrappers;
@@ -12,7 +10,10 @@ using PlayerRoles.PlayableScps.Scp049.Zombies;
 using PlayerRoles.PlayableScps.Scp1507;
 using PlayerStatsSystem;
 using RelativePositioning;
+using RemoteAdmin.Communication;
 using Respawning.NamingRules;
+using System.Collections.Generic;
+using System.Linq;
 using TakChangesV5.DisguiseModule.UI;
 using TakChangesV5.ForEvents.DisguiseModule.UI;
 using UnityEngine;
@@ -56,13 +57,20 @@ namespace TakChangesV5.DisguiseModule.Extension {
                 return;
 
             if (ev.IsAllowed)
-                RemoveFakeRole(ev.Player, DisguiseChangeReason.NONE);
+            {
+                if (FakeRoles.TryGetValue(ev.Player.ReferenceHub, out FakeRole fakeRole))
+                {
+                    RemoveFakeRole(ev.Player, DisguiseChangeReason.NONE);
+                }
+            }
         }
 
         private static void PlayerEvents_OnPlayerLeft(PlayerLeftEventArgs ev)
         {
-            if (FakeRoles.ContainsKey(ev.Player.ReferenceHub))
+            if (FakeRoles.TryGetValue(ev.Player.ReferenceHub, out FakeRole fakeRole))
+            {
                 RemoveFakeRole(ev.Player, DisguiseChangeReason.NONE);
+            }
 
             if (ev.Player is null)
                 return;
@@ -112,15 +120,16 @@ namespace TakChangesV5.DisguiseModule.Extension {
             };
 
             FakeRoles[player.ReferenceHub] = value;
+
             // Update UI according to the new fake role for the player
-            DisguisedUI.RefreshDisguiseUI(player, reason);
+            DisguisedUI.RefreshDisguiseUI(player, value, reason);
         }
         
 
         public static void RemoveFakeRole(this Player player, DisguiseChangeReason reason)
         {
             // Update UI according to the removal of fake role for the player
-            DisguisedUI.RefreshDisguiseUI(player, reason);
+            DisguisedUI.RefreshDisguiseUI(player, FakeRoles[player.ReferenceHub], reason);
 
             // Remove the player's disguise if it exists in dictionary
             FakeRoles.Remove(player.ReferenceHub);
@@ -129,21 +138,20 @@ namespace TakChangesV5.DisguiseModule.Extension {
         public static void RemoveFakeRolesForAll(DisguiseChangeReason reason)
         {
             // Remove all disguises and Clear UIs (Only used in 'Unmask *')
-            var fakeRolesCopy = FakeRoles.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-            FakeRoles.Clear();
-            foreach (var kvp in fakeRolesCopy)
+            foreach (var kvp in FakeRoles.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
             {
-                DisguisedUI.RefreshDisguiseUI(Player.Get(kvp.Key), reason);
+                DisguisedUI.RefreshDisguiseUI(Player.Get(kvp.Key), FakeRoles[Player.Get(kvp.Key).ReferenceHub], reason);
             }
-            fakeRolesCopy.Clear();
+
+            FakeRoles.Clear();
         }
 
         private static void UpdateTimers() {
             // Updating timers for temporary disguises
             // #WARNING technically works seperately from UI, so yeah...
             foreach (var fakeRole in FakeRoles.Where(kvp => kvp.Value.EndTime > 0 && Time.time >= kvp.Value.EndTime)) {
+                DisguisedUI.RefreshDisguiseUI(Player.Get(fakeRole.Key), FakeRoles[Player.Get(fakeRole.Key).ReferenceHub], DisguiseChangeReason.REMOVED_BY_TIMER);
                 FakeRoles.Remove(fakeRole.Key);
-                DisguisedUI.RefreshDisguiseUI(Player.Get(fakeRole.Key), DisguiseChangeReason.REMOVED_BY_TIMER);
             }
         }
 
